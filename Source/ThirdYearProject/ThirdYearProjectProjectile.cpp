@@ -2,6 +2,7 @@
 
 #include "ThirdYearProjectProjectile.h"
 #include "GameFramework/ProjectileMovementComponent.h"
+#include "GameFramework/Character.h"
 #include "Components/SphereComponent.h"
 
 AThirdYearProjectProjectile::AThirdYearProjectProjectile() 
@@ -33,11 +34,49 @@ AThirdYearProjectProjectile::AThirdYearProjectProjectile()
 
 void AThirdYearProjectProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	// Only add impulse and destroy projectile if we hit a physics
-	if ((OtherActor != nullptr) && (OtherActor != this) && (OtherComp != nullptr) && OtherComp->IsSimulatingPhysics())
-	{
-		OtherComp->AddImpulseAtLocation(GetVelocity() * 100.0f, GetActorLocation());
+    FVector ExplosionOrigin = GetActorLocation();
+    float ExplosionRadius = 500.0f;  // Radius of the effect
+    float ExplosionForce = 2000.0f;  // Strength of the force applied
 
-		Destroy();
-	}
+    // Find all actors in the explosion radius
+    TArray<FOverlapResult> OverlapResults;
+    FCollisionShape CollisionSphere = FCollisionShape::MakeSphere(ExplosionRadius);
+
+    FCollisionQueryParams QueryParams;
+    QueryParams.AddIgnoredActor(this); // Ignore the projectile itself
+
+    GetWorld()->OverlapMultiByChannel(OverlapResults, ExplosionOrigin, FQuat::Identity, ECC_PhysicsBody, CollisionSphere, QueryParams);
+
+    for (const FOverlapResult& Result : OverlapResults)
+    {
+        AActor* AffectedActor = Result.GetActor();
+        if (AffectedActor && AffectedActor != this)
+        {
+            UPrimitiveComponent* AffectedComponent = Cast<UPrimitiveComponent>(Result.GetComponent());
+            if (AffectedComponent)
+            {
+                FVector Direction = AffectedComponent->GetComponentLocation() - ExplosionOrigin;
+                float Distance = Direction.Size();
+                Direction.Normalize();
+
+                float ScaledForce = ExplosionForce * (1.0f - (Distance / ExplosionRadius)); // Scale force based on distance
+
+                // Apply force to physics objects
+                if (AffectedComponent->IsSimulatingPhysics())
+                {
+                    AffectedComponent->AddImpulse(Direction * ScaledForce, NAME_None, true);
+                }
+
+                // Apply force to characters
+                ACharacter* AffectedCharacter = Cast<ACharacter>(AffectedActor);
+                if (AffectedCharacter)
+                {
+                    AffectedCharacter->LaunchCharacter(Direction * ScaledForce, true, true);
+                }
+            }
+        }
+    }
+
+    // Destroy the projectile after applying effects
+    Destroy();
 }

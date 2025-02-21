@@ -53,7 +53,7 @@ public:
 
 protected:
 	virtual void BeginPlay();
-
+	virtual void Tick(float DeltaTime) override;
 public:
 		
 
@@ -69,14 +69,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = Weapon)
 	bool GetHasRifle();
 
-	void StartSprint();
-	void StopSprint();
-	void StartSlide();
-	void StopSlide();
-	void CheckWallRun();
-	void StartWallRun();
-	void StopWallRun();
-	bool CanWallRun() const;
 
 
 protected:
@@ -85,6 +77,22 @@ protected:
 
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
+
+protected:
+	int JumpCount = 0;
+	const int MaxJumps = 2;  // Allows one extra jump (double jump)
+
+protected:
+	virtual void Jump() override;  // Override Jump
+	virtual void Landed(const FHitResult& Hit) override;  // Override Landed
+
+	void SlideJump();
+
+	void StartSprint();
+	void StopSprint();
+
+	void StartSlide();
+	void StopSlide();
 
 protected:
 	// APawn interface
@@ -99,12 +107,15 @@ public:
 
 
 private:
-	bool bIsSprinting;
-	bool bIsSliding;
-	bool bIsWallRunning;
-	float WalkSpeed;
-	float SprintSpeed;
-	FVector WallRunDirection;
+	float WalkSpeed = 600;
+	bool  bIsSprinting = false;
+	float SprintSpeed = 900.0f;
+	bool  bIsSliding = false;
+	float SlideSpeed;
+	FVector SlideDirection;
+	
+	
+
 
 };
 

@@ -41,15 +41,30 @@ AThirdYearProjectCharacter::AThirdYearProjectCharacter()
 	//Mesh1P->SetRelativeRotation(FRotator(0.9f, -19.19f, 5.2f));
 	Mesh1P->SetRelativeLocation(FVector(-30.f, 0.f, -150.f));
 
-	bIsSprinting = false;
-	bIsSliding = false;
-	bIsWallRunning = false;
-	WalkSpeed = 600.0f;
-	SprintSpeed = 1200.0f;
 
-	GetCharacterMovement()->JumpZVelocity = 600.0f;
-	GetCharacterMovement()->AirControl = 0.8f;
 
+	GetCharacterMovement()->JumpZVelocity = 500.0f;
+	GetCharacterMovement()->AirControl = 0.9f;  // Allow more control in air
+	GetCharacterMovement()->GroundFriction = 0.5f;  // Reduce friction to maintain momentum
+	GetCharacterMovement()->BrakingFrictionFactor = 0.2f; // Reduce braking friction
+	GetCharacterMovement()->GravityScale = 1.0f; // Normal gravity
+
+}
+
+
+void AThirdYearProjectCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime); // Call the parent class's Tick function
+
+	// If sliding, check the velocity
+	if (bIsSliding)
+	{
+		// If velocity falls below a certain threshold, stop the slide
+		if (GetVelocity().Size() < 200.f) // Adjust this threshold as needed
+		{
+			StopSlide();
+		}
+	}
 }
 
 void AThirdYearProjectCharacter::BeginPlay()
@@ -78,6 +93,9 @@ void AThirdYearProjectCharacter::SetupPlayerInputComponent(UInputComponent* Play
 		// Jumping
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &AThirdYearProjectCharacter::SlideJump);
+
+
 
 		// Moving
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AThirdYearProjectCharacter::Move);
@@ -85,19 +103,59 @@ void AThirdYearProjectCharacter::SetupPlayerInputComponent(UInputComponent* Play
 		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AThirdYearProjectCharacter::Look);
 
-		//Sprinting
+		//Sprint
 		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Started, this, &AThirdYearProjectCharacter::StartSprint);
-        EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &AThirdYearProjectCharacter::StopSprint);
+		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &AThirdYearProjectCharacter::StopSprint);
 
-		//Sliding 
+		//Slide
 		EnhancedInputComponent->BindAction(SlideAction, ETriggerEvent::Started, this, &AThirdYearProjectCharacter::StartSlide);
-		EnhancedInputComponent->BindAction(SlideAction, ETriggerEvent::Completed, this, &AThirdYearProjectCharacter::StopSlide);
+		EnhancedInputComponent->BindAction(SlideAction, ETriggerEvent::Started, this, &AThirdYearProjectCharacter::StopSlide);
+
+
 	}
 	else
 	{
 		UE_LOG(LogTemplateCharacter, Error, TEXT("'%s' Failed to find an Enhanced Input Component! This template is built to use the Enhanced Input system. If you intend to use the legacy system, then you will need to update this C++ file."), *GetNameSafe(this));
 	}
+
+	
 }
+
+
+void AThirdYearProjectCharacter::Jump()
+{
+	if (JumpCount < MaxJumps)
+	{
+		if (bIsSliding)
+		{
+			// Jumping from slide - preserve forward momentum
+			FVector SlideJumpDirection = (GetActorForwardVector() * 1.5f) + FVector(0, 0, 1); // Add upward component
+			LaunchCharacter(SlideJumpDirection * 800.f, true, true);
+			StopSlide(); // Stop sliding after jump
+		}
+		else if (JumpCount == 0)
+		{
+			// First jump (normal jump)
+			Super::Jump();
+		}
+		else
+		{
+			// Second jump (double jump) - preserve some velocity
+			FVector JumpVelocity = FVector(GetVelocity().X, GetVelocity().Y, GetCharacterMovement()->JumpZVelocity);
+			LaunchCharacter(JumpVelocity, false, true);
+		}
+
+		JumpCount++;  // Track jumps before landing
+		UE_LOG(LogTemp, Warning, TEXT("Jump Count: %d"), JumpCount);
+	}
+}
+
+void AThirdYearProjectCharacter::Landed(const FHitResult& Hit)
+{
+	Super::Landed(Hit);
+	JumpCount = 0;  // Reset jump count when landing
+}
+
 
 
 void AThirdYearProjectCharacter::Move(const FInputActionValue& Value)
@@ -126,6 +184,53 @@ void AThirdYearProjectCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
+void AThirdYearProjectCharacter::StartSprint()
+{
+	GetCharacterMovement()->MaxWalkSpeed = 900;
+	UE_LOG(LogTemp, Warning, TEXT("SPRINTING"));
+}
+
+void AThirdYearProjectCharacter::StopSprint()
+{
+	GetCharacterMovement()->MaxWalkSpeed = 600;
+	UE_LOG(LogTemp, Warning, TEXT("SPRINTING STOP"));
+}
+
+void AThirdYearProjectCharacter::StartSlide()
+{
+	if (!bIsSliding && GetCharacterMovement()->IsFalling() == false && GetCharacterMovement()->Velocity.Size() > 200.f)
+	{
+		bIsSliding = true;
+		SlideSpeed = FMath::Max(GetCharacterMovement()->Velocity.Size(), 1200.f); // Maintain speed
+		SlideDirection = GetVelocity().GetSafeNormal();
+		GetCharacterMovement()->MaxWalkSpeed = SlideSpeed;
+
+		// Lower capsule for sliding effect
+		GetCapsuleComponent()->SetCapsuleHalfHeight(48.f);
+	}
+}
+
+void AThirdYearProjectCharacter::StopSlide()
+{
+	if (bIsSliding)
+	{
+		bIsSliding = false;
+		GetCharacterMovement()->MaxWalkSpeed = 600.f;
+		GetCapsuleComponent()->SetCapsuleHalfHeight(96.f); // Reset capsule
+	}
+}
+
+void AThirdYearProjectCharacter::SlideJump()
+{
+	if (bIsSliding)
+	{
+		// Preserve momentum when jumping out of slide
+		FVector JumpDirection = GetActorForwardVector() * 1.2f + FVector(0, 0, 1);
+		LaunchCharacter(JumpDirection * 800.f, true, true);
+		StopSlide();
+	}
+}
+
 void AThirdYearProjectCharacter::SetHasRifle(bool bNewHasRifle)
 {
 	bHasRifle = bNewHasRifle;
@@ -136,66 +241,5 @@ bool AThirdYearProjectCharacter::GetHasRifle()
 	return bHasRifle;
 }
 
-void AThirdYearProjectCharacter::StartSprint()
-{
-	bIsSprinting = true;
-	GetCharacterMovement()->MaxWalkSpeed = SprintSpeed;
-}
 
-void AThirdYearProjectCharacter::StopSprint()
-{
-	bIsSprinting = false;
-	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
-}
 
-void AThirdYearProjectCharacter::CheckWallRun()
-{
-	if (CanWallRun())
-	{
-		StartWallRun();
-	}
-	else
-	{
-		StopWallRun();
-	}
-}
-
-bool AThirdYearProjectCharacter::CanWallRun() const
-{
-	FVector Start = GetActorLocation();
-	FVector Forward = GetActorForwardVector() * 100.0f;
-
-	FHitResult WallHit;
-	FCollisionQueryParams QueryParams;
-	QueryParams.AddIgnoredActor(this);
-
-	return GetWorld()->LineTraceSingleByChannel(WallHit, Start, Start + Forward, ECC_Visibility, QueryParams);
-}
-
-void AThirdYearProjectCharacter::StartWallRun()
-{
-	//FVector WallRunDirection = GetActorForwardVector(); This causes problems for some reason
-	LaunchCharacter(GetActorForwardVector() * 600.0f, true, true);
-}
-
-void AThirdYearProjectCharacter::StopWallRun()
-{
-	StopJumping();
-}
-
-void AThirdYearProjectCharacter::StartSlide()
-{
-	if (!bIsSliding)
-	{
-		bIsSliding = true;
-		GetCharacterMovement()->MaxWalkSpeed = SprintSpeed * 1.2f;
-		GetCharacterMovement()->Crouch();
-	}
-}
-
-void AThirdYearProjectCharacter::StopSlide()
-{
-	bIsSliding = false;
-	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
-	GetCharacterMovement()->UnCrouch();
-}
