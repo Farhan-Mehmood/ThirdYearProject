@@ -182,6 +182,7 @@ void AThirdYearProjectCharacter::Landed(const FHitResult& Hit)
 {
 	Super::Landed(Hit);
 	JumpCount = 0;  // Reset jump count when landing
+	UE_LOG(LogTemp, Warning, TEXT("Jumps Reset"));
 }
 
 
@@ -354,6 +355,7 @@ void AThirdYearProjectCharacter::StartWallRun(FVector WallNormal)
         GetCharacterMovement()->GravityScale = 0.3f;  
         GetCharacterMovement()->MaxWalkSpeed = 1000.0f;  // Start with a default wall run speed
         JumpCount = 0;
+		UE_LOG(LogTemp, Warning, TEXT("Jumps Reset"));
 
         // Get the direction to move along the wall (cross product with up vector)
         WallRunDirection = FVector::CrossProduct(WallNormal, FVector::UpVector);

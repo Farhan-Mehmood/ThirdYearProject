@@ -114,8 +114,8 @@
 		float SlideSpeed;
 		FVector SlideDirection;
 	
-		float AccelerationRate = 5.0f;
-		float DecelerationRate =25.0f;
+		float AccelerationRate = 0.05f;
+		float DecelerationRate =20.0f;
 
 	protected:
 		bool bIsWallRunning = false;
