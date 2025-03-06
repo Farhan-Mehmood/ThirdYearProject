@@ -225,7 +225,7 @@ void AThirdYearProjectCharacter::Move(const FInputActionValue& Value)
 		// Apply the final velocity
 		GetCharacterMovement()->Velocity = FinalVelocity;
 
-		// Apply the movement input (this part would still be relevant for horizontal movement input processing)
+		// Apply the movement input (Horizontal and Vertical movemnt applied seperately)
 		AddMovementInput(GetActorForwardVector(), MovementVector.Y);
 		AddMovementInput(GetActorRightVector(), MovementVector.X);
 
