@@ -283,7 +283,7 @@ void AThirdYearProjectCharacter::StopSlide()
 		bIsSliding = false;
 		GetCharacterMovement()->MaxWalkSpeed = 600.f;
 		GetCapsuleComponent()->SetCapsuleHalfHeight(96.f); // Reset capsule
-	}
+	} 
 }
 
 void AThirdYearProjectCharacter::SlideJump()
