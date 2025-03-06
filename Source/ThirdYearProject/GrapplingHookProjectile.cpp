@@ -43,7 +43,7 @@
 //    {
 //        AttachedCharacter = Character;
 //
-//        // Example of attaching to a point and potentially pulling the character
+//      
 //        FVector HookLocation = Hit.Location;
 //        Character->LaunchCharacter(FVector(0, 0, 0), true, true); // Reset velocity
 //        Character->SetActorLocation(HookLocation);
