@@ -113,6 +113,7 @@
 		bool  bIsSliding = false;
 		float SlideSpeed;
 		FVector SlideDirection;
+		const float DefualtWalkSpeed = 600.0f;
 	
 		float AccelerationRate = 0.05f;
 		float DecelerationRate =20.0f;

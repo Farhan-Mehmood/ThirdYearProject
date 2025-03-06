@@ -32,7 +32,7 @@ AThirdYearProjectCharacter::AThirdYearProjectCharacter()
 	FirstPersonCameraComponent->SetRelativeLocation(FVector(-10.f, 0.f, 60.f)); // Position the camera
 	FirstPersonCameraComponent->bUsePawnControlRotation = true;
 
-	// Create a mesh component that will be used when being viewed from a '1st person' view (when controlling this pawn)
+	// Create a mesh component that will be used when being viewed from a '1st person' view 
 	Mesh1P = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("CharacterMesh1P"));
 	Mesh1P->SetOnlyOwnerSee(true);
 	Mesh1P->SetupAttachment(FirstPersonCameraComponent);
@@ -42,12 +42,13 @@ AThirdYearProjectCharacter::AThirdYearProjectCharacter()
 	Mesh1P->SetRelativeLocation(FVector(-30.f, 0.f, -150.f));
 
 
-
+	//Movement settings
 	GetCharacterMovement()->JumpZVelocity = 500.0f;
 	GetCharacterMovement()->AirControl = 0.9f;  // Allow more control in air
 	GetCharacterMovement()->GroundFriction = 0.5f;  // Reduce friction to maintain momentum
 	GetCharacterMovement()->BrakingFrictionFactor = 0.2f; // Reduce braking friction
 	GetCharacterMovement()->GravityScale = 1.0f; // Normal gravity
+	GetCharacterMovement()->MaxWalkSpeed = DefualtWalkSpeed;// default walk speed
 
 }
 
@@ -69,7 +70,7 @@ void AThirdYearProjectCharacter::Tick(float DeltaTime)
 	if (bIsWallRunning)
 	{
 		FVector WallNormal;
-		if (!CanWallRun(WallNormal) || !GetCharacterMovement()->IsFalling()) // Check if we lost the wall
+		if (!CanWallRun(WallNormal) || !GetCharacterMovement()->IsFalling()) // Check if wall is lost
 		{
 			StopWallRun();
 		}
@@ -146,9 +147,8 @@ void AThirdYearProjectCharacter::Jump()
 		if (bIsSliding)
 		{
 			// Jumping from slide - preserve forward momentum
-			FVector SlideJumpDirection = (GetActorForwardVector() * 1.5f) + FVector(0, 0, 1); // Add upward component
-			LaunchCharacter(SlideJumpDirection * 800.f, true, true);
-			StopSlide(); // Stop sliding after jump
+			SlideJump();
+			
 		}
 		else if (bIsWallRunning)
 		{
@@ -202,34 +202,34 @@ void AThirdYearProjectCharacter::Move(const FInputActionValue& Value)
 		// Get the current velocity of the character
 		FVector CurrentVelocity = GetCharacterMovement()->Velocity;
 
-		// Define the target velocity (based on the direction)
+		// Define the target velocity
 		FVector TargetVelocity = DesiredDirection.GetSafeNormal() * GetCharacterMovement()->MaxWalkSpeed;
 
-		// Handle horizontal movement interpolation (speed up or slow down)
+		// Handle horizontal movement interpolation
 		if (bIsMoving)
 		{
-			// Smooth acceleration (speed up)
+			// Smooth acceleration 
 			FVector NewVelocity = FMath::VInterpTo(CurrentVelocity, TargetVelocity, GetWorld()->DeltaTimeSeconds, AccelerationRate);
 			CurrentVelocity = NewVelocity;
 		}
 		else
 		{
-			// Smooth deceleration (slow down when not moving)
+			// Smooth deceleration 
 			FVector DeceleratedVelocity = FMath::VInterpTo(CurrentVelocity, FVector(0.f, 0.f, 0.f), GetWorld()->DeltaTimeSeconds, DecelerationRate);
 			CurrentVelocity = DeceleratedVelocity;
 		}
 
-		// Now make sure we preserve the vertical velocity (Z component) so gravity works normally
+		//preserve the vertical velocity (Z component) so gravity works normally
 		FVector FinalVelocity = FVector(CurrentVelocity.X, CurrentVelocity.Y, GetCharacterMovement()->Velocity.Z);
 
 		// Apply the final velocity
 		GetCharacterMovement()->Velocity = FinalVelocity;
 
-		// Apply the movement input (Horizontal and Vertical movemnt applied seperately)
+		// Apply the movement input 
 		AddMovementInput(GetActorForwardVector(), MovementVector.Y);
 		AddMovementInput(GetActorRightVector(), MovementVector.X);
 
-		// Log the current walk speed (using the current velocity size)
+		// Log the current walk speed 
 		float CurrentSpeed = GetCharacterMovement()->Velocity.Size();
 		UE_LOG(LogTemp, Warning, TEXT("Current Speed: %f"), CurrentSpeed);
 	}
@@ -258,7 +258,7 @@ void AThirdYearProjectCharacter::StartSprint()
 
 void AThirdYearProjectCharacter::StopSprint()
 {
-	GetCharacterMovement()->MaxWalkSpeed = 600;
+	GetCharacterMovement()->MaxWalkSpeed = DefualtWalkSpeed;
 	UE_LOG(LogTemp, Warning, TEXT("SPRINTING STOP"));
 }
 
