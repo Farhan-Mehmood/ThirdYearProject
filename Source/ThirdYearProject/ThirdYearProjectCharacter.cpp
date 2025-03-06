@@ -168,7 +168,7 @@ void AThirdYearProjectCharacter::Jump()
 		}
 		else
 		{
-			// Second jump (double jump) - preserve some velocity
+			// Second jump - preserve some velocity
 			FVector JumpVelocity = FVector(GetVelocity().X, GetVelocity().Y, GetCharacterMovement()->JumpZVelocity);
 			LaunchCharacter(JumpVelocity, false, true);
 		}
