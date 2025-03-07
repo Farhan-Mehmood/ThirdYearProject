@@ -13,7 +13,7 @@
 //	
 //public:	
 //	// Sets default values for this actor's properties
-//	AGrapplingHookProjectile();
+//	AGrapplingHookProjectile();	
 //
 //protected:
 //	// Called when the game starts or when spawned
@@ -47,4 +47,4 @@
 //    /** Returns ProjectileMovement subobject **/
 //    UProjectileMovementComponent* GetProjectileMovement() const { return ProjectileMovement; }
 //
-//};
+////};
