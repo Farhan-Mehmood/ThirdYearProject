@@ -164,9 +164,11 @@ void AThirdYearProjectCharacter::Jump()
 		else if (JumpCount == 0)
 		{
 			// First jump (normal jump)
-			Super::Jump();
+			//Super::Jump();
+			FVector JumpVelocity = FVector(GetVelocity().X, GetVelocity().Y, GetCharacterMovement()->JumpZVelocity);
+			LaunchCharacter(JumpVelocity, false, true);
 		}
-		else
+		else if (GetCharacterMovement()->IsFalling())
 		{
 			// Second jump - preserve some velocity
 			FVector JumpVelocity = FVector(GetVelocity().X, GetVelocity().Y, GetCharacterMovement()->JumpZVelocity);
@@ -353,7 +355,7 @@ void AThirdYearProjectCharacter::StartWallRun(FVector WallNormal)
 
         // Apply low gravity to the character during wall running
         GetCharacterMovement()->GravityScale = 0.3f;  
-        GetCharacterMovement()->MaxWalkSpeed = 1000.0f;  // Start with a default wall run speed
+        GetCharacterMovement()->MaxWalkSpeed = 900.0f;  // Start with a default wall run speed
         JumpCount = 0;
 		UE_LOG(LogTemp, Warning, TEXT("Jumps Reset"));
 
